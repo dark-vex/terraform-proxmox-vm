@@ -44,7 +44,7 @@ See [`examples/basic/`](examples/basic/) for a full working example.
 
 | Name | Version |
 | ---- | ------- |
-| <a name="provider_proxmox"></a> [proxmox](#provider\_proxmox) | 0.106.0 |
+| <a name="provider_proxmox"></a> [proxmox](#provider\_proxmox) | >= 0.83.0 |
 
 ## Modules
 
