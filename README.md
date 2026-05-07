@@ -44,7 +44,7 @@ See [`examples/basic/`](examples/basic/) for a full working example.
 
 | Name | Version |
 | ---- | ------- |
-| <a name="provider_proxmox"></a> [proxmox](#provider\_proxmox) | >= 0.83.0 |
+| <a name="provider_proxmox"></a> [proxmox](#provider\_proxmox) | 0.106.0 |
 
 ## Modules
 
@@ -69,7 +69,6 @@ No modules.
 | <a name="input_cloud_init_file_id"></a> [cloud\_init\_file\_id](#input\_cloud\_init\_file\_id) | Cloud-init user data file ID | `string` | `null` | no |
 | <a name="input_cloud_init_password"></a> [cloud\_init\_password](#input\_cloud\_init\_password) | Cloud-init password | `string` | `null` | no |
 | <a name="input_cloud_init_user"></a> [cloud\_init\_user](#input\_cloud\_init\_user) | Cloud-init username | `string` | `"ubuntu"` | no |
-| <a name="input_cpu_architecture"></a> [cpu\_architecture](#input\_cpu\_architecture) | CPU architecture | `string` | `"x86_64"` | no |
 | <a name="input_cpu_cores"></a> [cpu\_cores](#input\_cpu\_cores) | Number of CPU cores | `number` | `1` | no |
 | <a name="input_cpu_sockets"></a> [cpu\_sockets](#input\_cpu\_sockets) | Number of CPU sockets | `number` | `1` | no |
 | <a name="input_cpu_type"></a> [cpu\_type](#input\_cpu\_type) | CPU type (e.g., host, x86-64-v2-AES) | `string` | `"host"` | no |
