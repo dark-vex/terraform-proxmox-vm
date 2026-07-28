@@ -202,3 +202,21 @@ variable "boot_order" {
   type        = list(string)
   default     = ["scsi0"]
 }
+
+variable "additional_runcmd" {
+  description = "Extra runcmd entries rendered into a vendor-data cloud-init snippet, merged at boot with the module's own generated user-data. Only takes effect when cloud_init_datastore_id is set and cloud_init_file_id is null (a custom user-data snippet's runcmd always wins over vendor-data and would silently swallow these). Empty list = no vendor-data snippet uploaded, zero behavior change."
+  type        = list(string)
+  default     = []
+}
+
+variable "install_qemu_guest_agent" {
+  description = "Install and enable qemu-guest-agent via a cloud-init runcmd on first boot (Debian/Ubuntu family only; set false for other distros). Defaults to false so existing VMs are unaffected on upgrade: setting the resulting vendor_data_file_id for the first time on an already-existing VM forces replacement. Only new VMs should opt in. Independent of agent_enabled, which already defaults to true and controls Proxmox's QMP guest-agent channel (agent { enabled = ... }) regardless of whether the package is actually installed."
+  type        = bool
+  default     = false
+}
+
+variable "snippets_datastore_id" {
+  description = "Datastore ID used to upload the generated vendor-data cloud-init snippet (must support the 'snippets' content type, e.g. a directory-backed store like \"local\"). Required (plan-time error otherwise) whenever additional_runcmd is non-empty or install_qemu_guest_agent is true. No default: cloud_init_datastore_id is usually the wrong store for this (LVM-thin datastores such as \"local-lvm\" only support the 'images' content type, never 'snippets')."
+  type        = string
+  default     = null
+}
