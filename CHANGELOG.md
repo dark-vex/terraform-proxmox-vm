@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.2.0 — 2026-09-18
+
+### Added
+
+- `path_in_datastore` field on `disks` entries to support raw physical-disk
+  passthrough (`datastore_id = ""`), matching the `bpg/proxmox` provider's native
+  passthrough semantics. `size` is now optional on `disks` entries (must be left
+  unset for a passthrough entry; exactly one of `size`/`path_in_datastore` is
+  enforced via variable validation). Non-breaking — no action required for existing
+  configurations; every field that changed was a required→optional relaxation or a
+  new optional field, and both new validations evaluate trivially true for any
+  existing `disks` map.
+
 ## v1.1.0 — 2026-09-18
 
 ### Added

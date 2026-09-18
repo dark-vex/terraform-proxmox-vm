@@ -21,6 +21,12 @@ module "vm" {
       interface    = "scsi0"
       size         = 20
     }
+    passthrough = {
+      datastore_id      = ""
+      path_in_datastore = "/dev/disk/by-id/dm-name-..."
+      interface         = "scsi1"
+      backup            = false
+    }
   }
 
   ip_config = {
@@ -29,6 +35,25 @@ module "vm" {
   }
 }
 ```
+
+The `passthrough` entry above attaches a raw host block device directly to the VM
+(`datastore_id = ""` + `path_in_datastore`), bypassing Proxmox storage. `size` must
+be left unset for this shape.
+
+### Adopting an existing VM's passthrough disk
+
+To bring an existing, unmanaged VM's passthrough disk under Terraform management:
+
+1. Import the whole VM (there's no per-disk import):
+   `terraform import module.vm.proxmox_virtual_environment_vm.this <node>/<vmid>`
+2. Add a `disks` entry for it with `datastore_id = ""` and the real
+   `path_in_datastore`, explicitly setting `backup`/`ssd`/`iothread`/`discard` to
+   match the device's actual Proxmox-side configuration.
+3. Run `terraform plan` and confirm it's clean before applying.
+
+As an extra safety net, this module sets `prevent_destroy = true` on the VM
+resource: if the plan ever proposes replacing the VM, apply hard-errors instead of
+proceeding.
 
 See [`examples/basic/`](examples/basic/) for a full working example.
 
@@ -73,7 +98,7 @@ No modules.
 | <a name="input_cpu_sockets"></a> [cpu\_sockets](#input\_cpu\_sockets) | Number of CPU sockets | `number` | `1` | no |
 | <a name="input_cpu_type"></a> [cpu\_type](#input\_cpu\_type) | CPU type (e.g., host, x86-64-v2-AES) | `string` | `"host"` | no |
 | <a name="input_description"></a> [description](#input\_description) | VM description | `string` | `""` | no |
-| <a name="input_disks"></a> [disks](#input\_disks) | Mappa dei dischi virtuali | <pre>map(object({<br/>    backup       = optional(bool, true)<br/>    datastore_id = string<br/>    interface    = string # Es. scsi0, scsi1 (FONDAMENTALE che sia univoco)<br/>    size         = number<br/>    file_format  = optional(string, "raw")<br/>    file_id      = optional(string)<br/>    iothread     = optional(bool, true)<br/>    ssd          = optional(bool, true)<br/>    discard      = optional(string, "on")<br/>  }))</pre> | `{}` | no |
+| <a name="input_disks"></a> [disks](#input\_disks) | Mappa dei dischi virtuali (la chiave della mappa sarà un nome logico, es. 'boot', 'storage').<br/><br/>Each entry is either a normal storage-backed disk (set `size`, leave<br/>`path_in_datastore` unset) or a raw physical-disk passthrough entry (set<br/>`path_in_datastore` to a host block device path, e.g.<br/>`/dev/disk/by-id/dm-name-...`, leave `size` unset, and set<br/>`datastore_id = ""`). Exactly one of `size`/`path_in_datastore` must be set per<br/>entry; this is enforced via variable validation. Only the plain<br/>host-passthrough shape is supported here — not the provider's other<br/>`path_in_datastore` use case of attaching another VM's existing disk (which<br/>pairs it with a non-empty `datastore_id` and `size`).<br/><br/>WARNINGS for `path_in_datastore` entries:<br/>  - Never attach the same passthrough device to more than one VM.<br/>  - Never reuse an existing `interface` key for a different physical device<br/>    across applies — this risks a detach/recreate against a real device.<br/>    `prevent_destroy` on this module's VM resource does not protect an<br/>    individual disk from being dropped or recreated in place.<br/>  - Passthrough entries still inherit `backup=true, ssd=true, iothread=true,<br/>    discard="on"` from this type's defaults. When adopting an existing device,<br/>    set these explicitly to match its real Proxmox-side configuration (a<br/>    passthrough disk commonly already has `backup=false`) to avoid a spurious<br/>    diff.<br/>  - A passthrough entry planned as a brand-new disk (no prior Terraform state<br/>    for that VM/disk) will show `size = 8` in the plan — that's the<br/>    provider's schema default, not the device's real size, and this module<br/>    cannot override it. Always bring an existing device under management via<br/>    `terraform import` + matching config entry (see README) rather than<br/>    letting Terraform create the entry from scratch. | <pre>map(object({<br/>    backup            = optional(bool, true)<br/>    datastore_id      = string<br/>    interface         = string # Es. scsi0, scsi1 (FONDAMENTALE che sia univoco)<br/>    size              = optional(number)<br/>    path_in_datastore = optional(string)<br/>    file_format       = optional(string, "raw")<br/>    file_id           = optional(string)<br/>    iothread          = optional(bool, true)<br/>    ssd               = optional(bool, true)<br/>    discard           = optional(string, "on")<br/>  }))</pre> | `{}` | no |
 | <a name="input_efi_disk"></a> [efi\_disk](#input\_efi\_disk) | n/a | <pre>object({<br/>    datastore_id      = string<br/>    file_format       = optional(string)<br/>    type              = optional(string)<br/>    pre_enrolled_keys = optional(bool)<br/>  })</pre> | `null` | no |
 | <a name="input_ip_config"></a> [ip\_config](#input\_ip\_config) | IP configuration | <pre>object({<br/>    ipv4_address = optional(string, "dhcp")<br/>    ipv4_gateway = optional(string)<br/>    ipv6_address = optional(string)<br/>    ipv6_gateway = optional(string)<br/>  })</pre> | <pre>{<br/>  "ipv4_address": "dhcp"<br/>}</pre> | no |
 | <a name="input_machine"></a> [machine](#input\_machine) | Machine settings | `string` | `""` | no |
