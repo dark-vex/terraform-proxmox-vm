@@ -63,20 +63,68 @@ variable "machine" {
 }
 
 variable "disks" {
-  description = "Mappa dei dischi virtuali"
+  description = <<-EOT
+    Mappa dei dischi virtuali (la chiave della mappa sarà un nome logico, es. 'boot', 'storage').
+
+    Each entry is either a normal storage-backed disk (set `size`, leave
+    `path_in_datastore` unset) or a raw physical-disk passthrough entry (set
+    `path_in_datastore` to a host block device path, e.g.
+    `/dev/disk/by-id/dm-name-...`, leave `size` unset, and set
+    `datastore_id = ""`). Exactly one of `size`/`path_in_datastore` must be set per
+    entry; this is enforced via variable validation. Only the plain
+    host-passthrough shape is supported here — not the provider's other
+    `path_in_datastore` use case of attaching another VM's existing disk (which
+    pairs it with a non-empty `datastore_id` and `size`).
+
+    WARNINGS for `path_in_datastore` entries:
+      - Never attach the same passthrough device to more than one VM.
+      - Never reuse an existing `interface` key for a different physical device
+        across applies — this risks a detach/recreate against a real device.
+        `prevent_destroy` on this module's VM resource does not protect an
+        individual disk from being dropped or recreated in place.
+      - Passthrough entries still inherit `backup=true, ssd=true, iothread=true,
+        discard="on"` from this type's defaults. When adopting an existing device,
+        set these explicitly to match its real Proxmox-side configuration (a
+        passthrough disk commonly already has `backup=false`) to avoid a spurious
+        diff.
+      - A passthrough entry planned as a brand-new disk (no prior Terraform state
+        for that VM/disk) will show `size = 8` in the plan — that's the
+        provider's schema default, not the device's real size, and this module
+        cannot override it. Always bring an existing device under management via
+        `terraform import` + matching config entry (see README) rather than
+        letting Terraform create the entry from scratch.
+  EOT
   # La chiave della mappa sarà un nome logico (es. 'boot', 'storage')
   type = map(object({
-    backup       = optional(bool, true)
-    datastore_id = string
-    interface    = string # Es. scsi0, scsi1 (FONDAMENTALE che sia univoco)
-    size         = number
-    file_format  = optional(string, "raw")
-    file_id      = optional(string)
-    iothread     = optional(bool, true)
-    ssd          = optional(bool, true)
-    discard      = optional(string, "on")
+    backup            = optional(bool, true)
+    datastore_id      = string
+    interface         = string # Es. scsi0, scsi1 (FONDAMENTALE che sia univoco)
+    size              = optional(number)
+    path_in_datastore = optional(string)
+    file_format       = optional(string, "raw")
+    file_id           = optional(string)
+    iothread          = optional(bool, true)
+    ssd               = optional(bool, true)
+    discard           = optional(string, "on")
   }))
   default = {}
+
+  validation {
+    condition = alltrue([
+      for k, d in var.disks :
+      (d.size != null && d.path_in_datastore == null) ||
+      (d.size == null && d.path_in_datastore != null)
+    ])
+    error_message = "Each disks entry must set exactly one of `size` or `path_in_datastore` (mutually exclusive)."
+  }
+
+  validation {
+    condition = alltrue([
+      for k, d in var.disks :
+      d.path_in_datastore == null || d.datastore_id == ""
+    ])
+    error_message = "When `path_in_datastore` is set, `datastore_id` must be \"\" (empty string) — this module only supports the raw host-block-device passthrough shape, not the provider's separate \"attach another VM's disk\" shape."
+  }
 }
 
 variable "network_devices" {

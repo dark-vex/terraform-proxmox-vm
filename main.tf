@@ -37,9 +37,10 @@ resource "proxmox_virtual_environment_vm" "this" {
     for_each = var.disks
 
     content {
-      backup       = disk.value.backup
-      datastore_id = disk.value.datastore_id
-      size         = disk.value.size
+      backup            = disk.value.backup
+      datastore_id      = disk.value.datastore_id
+      path_in_datastore = disk.value.path_in_datastore
+      size              = disk.value.size
 
       # Qui è il trucco: l'interfaccia DEVE essere definita nel valore
       interface = disk.value.interface
