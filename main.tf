@@ -28,6 +28,7 @@ resource "proxmox_virtual_environment_vm" "this" {
 
   memory {
     dedicated = var.memory
+    floating  = var.memory_floating
   }
 
   # --- GESTIONE DISCHI ---
@@ -142,6 +143,10 @@ resource "proxmox_virtual_environment_vm" "this" {
   serial_device {}
 
   lifecycle {
+    precondition {
+      condition     = var.memory_floating == null || var.memory_floating <= var.memory
+      error_message = "memory_floating must be less than or equal to memory."
+    }
     ignore_changes = [
       # Ignora tutti i file_id dei dischi (evita che TF provi a ricreare il disco dopo un clone)
       #disk[*].file_id,
