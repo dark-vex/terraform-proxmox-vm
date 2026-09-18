@@ -43,6 +43,19 @@ variable "memory" {
   default     = 2048
 }
 
+variable "memory_floating" {
+  description = <<-EOT
+    Floating (ballooning minimum) memory in MB. Maps to the provider's `memory.floating`
+    argument / Proxmox's `balloon` setting.
+      - `null` (default) or `0` — ballooning disabled (matches current module behavior).
+      - equal to `var.memory` — ballooning enabled with no effective minimum.
+      - less than `var.memory` — ballooning enabled, down to this minimum.
+    Must not exceed `var.memory` (enforced via a resource precondition).
+  EOT
+  type        = number
+  default     = null
+}
+
 variable "machine" {
   description = "Machine settings"
   type        = string

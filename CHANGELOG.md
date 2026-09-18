@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- `memory_floating` variable to set the Proxmox ballooning minimum (`memory.floating`)
+
 ## v1.0.0 — 2026-05-07
 
 ### Added
