@@ -101,7 +101,7 @@ variable "disks" {
     interface         = string # Es. scsi0, scsi1 (FONDAMENTALE che sia univoco)
     size              = optional(number)
     path_in_datastore = optional(string)
-    file_format       = optional(string, "raw")
+    file_format       = optional(string)
     file_id           = optional(string)
     iothread          = optional(bool, true)
     ssd               = optional(bool, true)
