@@ -1,5 +1,28 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Removed the `file_format = optional(string, "raw")` type-level default on `disks` entries.
+  This default forced `file_format = "raw"` into every apply for `path_in_datastore` (raw
+  physical-disk passthrough) disks even though such disks have no `file_format` in their live
+  Proxmox config, producing a permanent, unreconcilable plan diff (`+ file_format = "raw"`) that
+  — combined with the provider resending the full disk list, `path_in_datastore` included, on
+  any disk-list change — made every apply on a VM with a passthrough disk fail for non-root API
+  tokens ("Only root can pass arbitrary filesystem paths."). `file_format` is now
+  `optional(string)` (no default), matching the `efi_disk` variable's existing behavior. For
+  regular (non-passthrough) disks with existing state this is inert — an existing disk's real,
+  already-applied format is preserved from state with no plan diff on upgrade.
+
+### Changed
+
+- Brand-new (not-yet-created) non-passthrough disks on storage backends whose Proxmox-side
+  default format isn't `raw` (e.g. `dir`/NFS-backed storages, which default to `qcow2`) will now
+  get that storage's natural default format instead of always being forced to `raw`. If you rely
+  on `raw` for new disks on such storage, set `file_format = "raw"` explicitly in your `disks`
+  entry.
+
 ## v1.2.0 — 2026-09-18
 
 ### Added

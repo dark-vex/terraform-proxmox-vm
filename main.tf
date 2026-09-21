@@ -45,7 +45,7 @@ resource "proxmox_virtual_environment_vm" "this" {
       # Qui è il trucco: l'interfaccia DEVE essere definita nel valore
       interface = disk.value.interface
 
-      file_format = try(disk.value.file_format, "raw")
+      file_format = try(disk.value.file_format, null)
       file_id     = try(disk.value.file_id, null)
       iothread    = try(disk.value.iothread, true)
       ssd         = try(disk.value.ssd, true)
